@@ -362,7 +362,7 @@ class Autoreifen(VectorSprite):
 
 class Explosion():
     
-    def __init__(self, pos, what="Spark", maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravityy=3.7,sparksmin=5,sparksmax=20):
+    def __init__(self, pos, what="Spark", maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravityy=3.7,sparksmin=5,sparksmax=20,acc=1.0):
 
         for s in range(random.randint(sparksmin,sparksmax)):
             v = pygame.math.Vector2(1,0) # vector aiming right (0°)
@@ -377,7 +377,7 @@ class Explosion():
             elif what == "Crumb":
                 
                 Crumb(pos=pygame.math.Vector2(pos.x, pos.y), angle= a, move=v*speed,
-                  max_age = duration, color=color, gravity = g)
+                  max_age = duration, color=color, gravity = g, acc=acc)
                   
 class Spark(VectorSprite):
 
@@ -417,6 +417,8 @@ class Crumb(VectorSprite):
         #print("i am a new Crumb")
         if "gravity" not in kwargs:
             self.gravity = pygame.math.Vector2(0, -3.7)
+        if "acc" not in kwargs:
+            self.acc = 1.0
     
     def _overwrite_parameters(self):
         self._layer = 2
@@ -439,6 +441,7 @@ class Crumb(VectorSprite):
     def update(self, seconds):
         VectorSprite.update(self, seconds)
         self.move += self.gravity
+        self.move *= self.acc
 
 
 class Viewer(object):
@@ -556,19 +559,19 @@ class Viewer(object):
         
     def load_sprites(self):
         Viewer.images["fluffballb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnb.png")).convert_alpha()
-        Viewer.images["fluffballb."] = pygame.transform.scale(Viewer.images["fluffballb."], (100,100))
+        Viewer.images["fluffballb."] = pygame.transform.scale(Viewer.images["fluffballb."], (90,90))
         Viewer.images["fluffballgb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahngb.png")).convert_alpha()
-        Viewer.images["fluffballgb."] = pygame.transform.scale(Viewer.images["fluffballgb."], (100,100))
+        Viewer.images["fluffballgb."] = pygame.transform.scale(Viewer.images["fluffballgb."], (90,90))
         Viewer.images["fluffballgn."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahngn.png")).convert_alpha()
-        Viewer.images["fluffballgn."] = pygame.transform.scale(Viewer.images["fluffballgn."], (100,100))
+        Viewer.images["fluffballgn."] = pygame.transform.scale(Viewer.images["fluffballgn."], (90,90))
         Viewer.images["fluffballp."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnp.png")).convert_alpha()
-        Viewer.images["fluffballp."] = pygame.transform.scale(Viewer.images["fluffballp."], (100,100))
+        Viewer.images["fluffballp."] = pygame.transform.scale(Viewer.images["fluffballp."], (90,90))
         Viewer.images["fluffballt."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnt.png")).convert_alpha()
-        Viewer.images["fluffballt."] = pygame.transform.scale(Viewer.images["fluffballt."], (100,100))
+        Viewer.images["fluffballt."] = pygame.transform.scale(Viewer.images["fluffballt."], (90,90))
         Viewer.images["fluffball_menu"] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahn.png")).convert_alpha()
         Viewer.images["fluffball_menu"] = pygame.transform.scale(Viewer.images["fluffball_menu"], (300, 300))
         Viewer.images["fluffballr."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnr.png")).convert_alpha()
-        Viewer.images["fluffballr."] = pygame.transform.scale(Viewer.images["fluffballr."], (100,100))
+        Viewer.images["fluffballr."] = pygame.transform.scale(Viewer.images["fluffballr."], (90,90))
         Viewer.images["donut_menu"] = pygame.image.load(os.path.join("data", "donut.png")).convert_alpha()
         Viewer.images["donut_menu"] = pygame.transform.scale(Viewer.images["donut_menu"], (300, 300))
         Viewer.images["cookie_menu"] = pygame.image.load(os.path.join("data", "cookie.png")).convert_alpha()
@@ -955,6 +958,8 @@ class Viewer(object):
         Flytext(Viewer.width/2,Viewer.height/2,"and stay under 50 collisions", (0,0,255), duration=10, fontsize=100)
         Flytext(Viewer.width/2,Viewer.height/1.33,"with the car wheels", (0,0,255), duration=10, fontsize=100)
         
+        
+        crazytime = 0
         while running:
             
             milliseconds = self.clock.tick(self.fps) #
@@ -982,7 +987,9 @@ class Viewer(object):
                     elif event.key == pygame.K_m:
                         self.menu_run() 
             # delete everything on screen
-            self.screen.blit(self.background, (0, 0))
+            self.screen.blit(self.background, (0, 0))  # macht alles weiß
+            if self.playtime < crazytime :
+                self.screen.fill((random.randint(0,255), random.randint(0,255), random.randint(0,255)))
             # ------------ pressed keys ------
             pressed_keys = pygame.key.get_pressed()
 
@@ -1023,8 +1030,8 @@ class Viewer(object):
             #oldleft, oldmiddle, oldright = left, middle, right
 
             # ------ joystick handler -------
-            print(self.fluffs)
-            print(len(self.joysticks))
+        #    print(self.fluffs)
+        #    print(len(self.joysticks))
             for number, j in enumerate(self.joysticks):
                 if number == 0 :
                     x = j.get_axis(0)
@@ -1081,24 +1088,25 @@ class Viewer(object):
                 for e in crashgroup:
                     if e.__class__.__name__=="Donut":
                         Flytext(f.pos.x,-f.pos.y,text="Mjam",color=(240,80,190),duration=5,fontsize=30)
-                        Explosion(pos=e.pos, what ="Crumb", maxspeed=150, minspeed=50, color=(210,110,210), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300)
+                        Explosion(pos=e.pos, what ="Crumb", maxspeed=900, minspeed=500, color=(210,110,210), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300, acc=0.9)
                     elif e.__class__.__name__=="Cookie":
                         Flytext(f.pos.x,-f.pos.y,text="Knusper, Knusper!",color=(210,110,10),duration=5,fontsize=30)
-                        Explosion(pos=e.pos, what ="Crumb", maxspeed=150, minspeed=50, color=(220,160,40), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300)
+                        Explosion(pos=e.pos, what ="Crumb", maxspeed=150, minspeed=50, color=(220,160,40), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300, acc=1.05)
                     e.kill()
                     #Explosion(pos=e.pos, what ="Crumb", maxspeed=100, minspeed=50, color=(220,160,40), maxduration=1.5, gravityy=0, sparksmin=20, sparksmax=50)
                     if len(self.foodgroup) == 0 and not gameOver:
-                        Flytext(Viewer.width/2,Viewer.height/2,"Alles gemampft... Päuschen!", (0,0,255), duration=10, fontsize=100)
+                        Flytext(Viewer.width/2,Viewer.height/2,"Alles gemampft... Päuschen!", (0,0,255), duration=10, fontsize=145)
                         #endtime = self.playtime + 5 # in 5 sekunden ist alles aus
                         gameOver = True
                         exittime = self.playtime + 3
-            # ----------collision detection between fluffballs and badfood----
+            # ----------collision detection between fluffballs and car wheel----
             for f in self.fluffgroup:
                 crashgroup = pygame.sprite.spritecollide(f, self.car_wheelgroup,
                              False,pygame.sprite.collide_mask)
                 for z in crashgroup:
                     if z.__class__.__name__=="Autoreifen":
                         Flytext(f.pos.x,-f.pos.y,text="Uargh, ein Autoreifen!",color=(1,1,1),duration=5,fontsize=40)
+                        crazytime = self.playtime + 0.1
                         #Fluffball makes a little jump if bouncing against a car wheel
                         f.move = f.move*-0.8
                         j = f.move.normalize()*25
@@ -1113,7 +1121,7 @@ class Viewer(object):
                         dist = f.pos-z.pos
                         point = z.pos + dist * 0.5
                         
-                        Explosion(pos=point, what ="Spark", maxspeed=100, minspeed=50, color=(0,0,0), maxduration=1.5, gravityy=0, sparksmin=20, sparksmax=50)
+                        Explosion(pos=point, what ="Spark", maxspeed=100, minspeed=50, color=(0,0,0), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300)
             #------------collision detection between fluffball and other fluffball-----           
             for f in self.fluffgroup:
                 crashgroup = pygame.sprite.spritecollide(f, self.fluffgroup, False, pygame.sprite.collide_mask)
