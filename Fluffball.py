@@ -111,6 +111,7 @@ class Flytext(pygame.sprite.Sprite):
             self.rect.center = (self.x, self.y)
             if self.time > self.duration:
                 self.kill()      # remove Sprite from screen and from groups
+                
 
 class VectorSprite(pygame.sprite.Sprite):
     """base class for sprites. this class inherits from pygames sprite class"""
@@ -119,11 +120,11 @@ class VectorSprite(pygame.sprite.Sprite):
 
     def __init__(self, **kwargs):
         self._default_parameters(**kwargs)
-        self._overwrite_parameters()
         pygame.sprite.Sprite.__init__(self, self.groups) #call parent class. NEVER FORGET !
         self.number = VectorSprite.number # unique number for each sprite
         VectorSprite.number += 1
         VectorSprite.numbers[self.number] = self
+        self._overwrite_parameters()
         self.create_image()
         self.distance_traveled = 0 # in pixel
         self.rect.center = (int(self.pos.x), -int(self.pos.y))
@@ -314,102 +315,106 @@ class VectorSprite(pygame.sprite.Sprite):
                 self.move.y *= -1
             elif self.warp_on_edge:
                 self.pos.y = 0
-
+                
 class Fluffball(VectorSprite):
     
     def _overwrite_parameters(self):
         self._layer = 2
+        self.reifendamage = 0
+        
+    def update(self, seconds):
+        VectorSprite.update(self, seconds)
+        if self.reifendamage > 0:
+            self.reifendamage -= 5
+        print("reifendamage", self.reifendamage)
         
     def create_image(self):
         self.image = Viewer.images[self.fluffball_color]
         self.image0 = self.image.copy()
         self.rect = self.image.get_rect()
-        
-class Babycat(VectorSprite):
+
+class Kitty(VectorSprite):
     
     def _overwrite_parameters(self):
-        self._layer = 1
-    
-    def create_image(self):        
-        self.image = Viewer.images["baby cat"]
-        self.image0 = self.image.copy()
-        self.rect = self.image.get_rect()
-    
-    def ai(self):
-        if random.random() < 0.01:
-            self.move = pygame.math.Vector2(random.randint(-50,50),random.randint(-50,50))
-            
-class Donut(VectorSprite):
+        Paw(bossnumber = self.number, side="right",sticky_with_boss=True)
+        Paw(bossnumber = self.number, side="left",sticky_with_boss=True)
+        self.chance_to_flap = 0.01
+        self.chance_to_sit = 0.01
+        self.state="sit"
+        self.bounce_on_edge=True
+        
+    def update(self,seconds):
+        VectorSprite.update(self,seconds)
+        if self.state == "sit":
+            if random.random() < self.chance_to_flap:
+                self.state="flap"
+                v=pygame.math.Vector2(150,0)
+                v.rotate_ip(random.randint(0,360))
+                self.move=v 
+        elif self.state == "flap":
+            if random.random() < self.chance_to_sit:
+                self.state="sit"
+                self.move=pygame.math.Vector2(0,0)
     
     def create_image(self):
-        self.image = Viewer.images["donut"]
-        self.image0 = self.image.copy()
-        self.rect = self.image.get_rect()
-
-class Cookie(VectorSprite):
-    
-    def create_image(self):
-        self.image = Viewer.images["cookie"]
+        self.image = Viewer.images["kitty"]
+        self.image.convert_alpha()
         self.image0 = self.image.copy()
         self.rect = self.image.get_rect()
         
-class Autoreifen(VectorSprite):
-    
-    def create_image(self):
-        self.image = Viewer.images["car wheel"]
-        self.image0 = self.image.copy()
-        self.rect = self.image.get_rect()
 
-class Explosion():
-    
-    def __init__(self, pos, what="Spark", maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravityy=3.7,sparksmin=5,sparksmax=20,acc=1.0):
-
-        for s in range(random.randint(sparksmin,sparksmax)):
-            v = pygame.math.Vector2(1,0) # vector aiming right (0°)
-            a = random.randint(0,360)
-            v.rotate_ip(a)
-            g = pygame.math.Vector2(0, - gravityy)
-            speed = random.randint(minspeed, maxspeed)     #150
-            duration = random.random() * maxduration
-            if what == "Spark":     
-                Spark(pos=pygame.math.Vector2(pos.x, pos.y), angle= a, move=v*speed,
-                  max_age = duration, color=color, gravity = g)
-            elif what == "Crumb":
-                
-                Crumb(pos=pygame.math.Vector2(pos.x, pos.y), angle= a, move=v*speed,
-                  max_age = duration, color=color, gravity = g, acc=acc)
-                  
-class Spark(VectorSprite):
-
-    def __init__(self, **kwargs):
-        VectorSprite.__init__(self, **kwargs)
-        if "gravity" not in kwargs:
-            self.gravity = pygame.math.Vector2(0, -3.7)
+class Paw(VectorSprite):
     
     def _overwrite_parameters(self):
-        self._layer = 2
-        self.kill_on_edge = True
+        self.pos = pygame.math.Vector2(0,0)
+        self.boss = VectorSprite.numbers[self.bossnumber]
+        self.angle = 270
+        #self.correction()
     
-    def create_image(self):
-        r,g,b = self.color
-        r = randomize_color(r,50)
-        g = randomize_color(g,50)
-        b = randomize_color(b,50)
-        self.image = pygame.Surface((10,10))
-        pygame.draw.line(self.image, (r,g,b), 
-                         (10,5), (5,5), 3)
-        pygame.draw.line(self.image, (r,g,b),
-                          (5,5), (2,5), 1)
-        self.image.set_colorkey((0,0,0))
-        self.rect= self.image.get_rect()
-        self.image0 = self.image.copy()
-
+    def correction(self):    
+        if self.side == "right":
+            self.rect.centerx = self.boss.rect.centerx + 5
+            self.pos.x = self.boss.pos.x + 5
+            self.rect.centery = self.boss.rect.centery + 10
+            self.pos.y = self.boss.pos.y - 10
+        elif self.side == "left":
+            self.rect.centerx = self.boss.rect.centerx - 25
+            self.pos.x = self.boss.pos.x - 25
+            self.rect.centery = self.boss.rect.centery + 10
+            self.pos.y = self.boss.pos.y - 10
+        
+    def flap(self):
+        #self.correction()
+        a=random.randint(-30,30)
+        #("flapwinkel", a)
+        if self.side == "right":
+            self.set_angle(a)
+        else:
+            self.set_angle(180-a)    
+        
+    def play(self,angle=0):
+        if angle < 90 and angle > -90:
+            if self.side == "right":
+                self.set_angle(angle + random.randint(-5,5))
+        #elif angle >= 90 and angle <= 270: 
+        else:
+            if self.side == "left":
+                self.set_angle(angle + random.randint(-5,5))
+        
     def update(self, seconds):
-        VectorSprite.update(self, seconds)
-        self.move += self.gravity
-
-
-                  
+        VectorSprite.update(self,seconds)
+        
+        self.correction()
+    
+    def stop_play(self):
+        self.set_angle(270)
+        
+    def create_image(self):
+        self.image = Viewer.images["paw"]
+        self.image.convert_alpha()
+        self.image0 = self.image.copy()
+        self.rect = self.image.get_rect()
+        
 class Crumb(VectorSprite):
 
     def __init__(self, **kwargs):
@@ -442,6 +447,77 @@ class Crumb(VectorSprite):
         VectorSprite.update(self, seconds)
         self.move += self.gravity
         self.move *= self.acc
+
+class Explosion():
+    
+    def __init__(self, pos, what="Spark", maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravityy=3.7,sparksmin=5,sparksmax=20,acc=1.0, min_angle=0, max_angle=360):
+
+        for s in range(random.randint(sparksmin,sparksmax)):
+            v = pygame.math.Vector2(1,0) # vector aiming right (0°)
+            a = random.randint(int(min_angle),int(max_angle))
+            v.rotate_ip(a)
+            g = pygame.math.Vector2(0, - gravityy)
+            speed = random.randint(minspeed, maxspeed)     #150
+            duration = random.random() * maxduration
+            if what == "Spark":     
+                Spark(pos=pygame.math.Vector2(pos.x, pos.y), angle= a, move=v*speed,
+                  max_age = duration, color=color, gravity = g)
+            elif what == "Crumb":
+                
+                Crumb(pos=pygame.math.Vector2(pos.x, pos.y), angle= a, move=v*speed,
+                  max_age = duration, color=color, gravity = g, acc=acc)
+                  
+class Donut(VectorSprite):
+    
+    def create_image(self):
+        self.image = Viewer.images["donut"]
+        self.image0 = self.image.copy()
+        self.rect = self.image.get_rect()
+        
+class Cookie(VectorSprite):
+    
+    def create_image(self):
+        self.image = Viewer.images["cookie"]
+        self.image0 = self.image.copy()
+        self.rect = self.image.get_rect()
+        
+class Autoreifen(VectorSprite):
+    
+    def create_image(self):
+        self.image = Viewer.images["car wheel"]
+        self.image0 = self.image.copy()
+        self.rect = self.image.get_rect()
+        
+class Spark(VectorSprite):
+
+    def __init__(self, **kwargs):
+        VectorSprite.__init__(self, **kwargs)
+        if "gravity" not in kwargs:
+            self.gravity = pygame.math.Vector2(0, -3.7)
+    
+    def _overwrite_parameters(self):
+        self._layer = 2
+        self.kill_on_edge = True
+    
+    def create_image(self):
+        r,g,b = self.color
+        r = randomize_color(r,50)
+        g = randomize_color(g,50)
+        b = randomize_color(b,50)
+        self.image = pygame.Surface((10,10))
+        pygame.draw.line(self.image, (r,g,b), 
+                         (10,5), (5,5), 3)
+        pygame.draw.line(self.image, (r,g,b),
+                          (5,5), (2,5), 1)
+        self.image.set_colorkey((0,0,0))
+        self.rect= self.image.get_rect()
+        self.image0 = self.image.copy()
+
+    def update(self, seconds):
+        VectorSprite.update(self, seconds)
+        self.move += self.gravity
+
+
 
 
 class Viewer(object):
@@ -558,6 +634,10 @@ class Viewer(object):
         self.loadbackground()
         
     def load_sprites(self):
+        Viewer.images["kitty"] = pygame.image.load(os.path.join("data", "kitty.png")).convert_alpha()
+        Viewer.images["kitty"] = pygame.transform.scale(Viewer.images["kitty"], (150,150))
+        Viewer.images["paw"] = pygame.image.load(os.path.join("data", "paw.png")).convert_alpha()
+        Viewer.images["paw"] = pygame.transform.scale(Viewer.images["paw"], (145,30))
         Viewer.images["fluffballb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnb.png")).convert_alpha()
         Viewer.images["fluffballb."] = pygame.transform.scale(Viewer.images["fluffballb."], (90,90))
         Viewer.images["fluffballgb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahngb.png")).convert_alpha()
@@ -587,8 +667,7 @@ class Viewer(object):
         Viewer.images["cookie"] = pygame.transform.scale(Viewer.images["cookie"], (80,80))
         Viewer.images["car wheel"] = pygame.image.load(os.path.join("data", "car_wheel.png")).convert_alpha()
         Viewer.images["car wheel"] = pygame.transform.scale(Viewer.images["car wheel"], (100,100))
-    
-    
+        
     def prepare_sprites(self):
         """painting on the surface and create sprites"""
         self.load_sprites()
@@ -598,9 +677,12 @@ class Viewer(object):
         self.fluffgroup = pygame.sprite.Group()
         self.car_wheelgroup = pygame.sprite.Group()
         self.flytextgroup = pygame.sprite.Group()
-        self.babycatgroup = pygame.sprite.Group()
+        self.kittygroup = pygame.sprite.Group()
         self.collisiongroup = pygame.sprite.Group()
+        self.pawgroup = pygame.sprite.Group()
         
+        Kitty.groups = self.allgroup, self.kittygroup
+        Paw.groups = self.allgroup, self.pawgroup
         VectorSprite.groups = self.allgroup
         Flytext.groups = self.allgroup
         Explosion.groups = self.allgroup, self.explosiongroup
@@ -609,22 +691,29 @@ class Viewer(object):
         Cookie.groups = self.allgroup, self.foodgroup, self.collisiongroup
         Autoreifen.groups = self.allgroup, self.car_wheelgroup, self.collisiongroup
         Flytext.groups = self.allgroup, self.flytextgroup
-        Babycat.groups = self.allgroup, self.babycatgroup, self.collisiongroup
+        #Babycat.groups = self.allgroup, self.babycatgroup, self.collisiongroup
         Spark.groups = self.allgroup 
         Crumb.groups = self.allgroup
+   
 
         self.fluffs.clear()
-        self.fluff = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//4),fluffball_color="fluffballb.")
-        self.fluffs.append(self.fluff)
-        if Game.players >= 2:
-            self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4))
-            self.fluffs.append(self.fluff2)
-        if Game.players >= 3:
-            self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33))
-            self.fluffs.append(self.fluff3)
-        if Game.players >= 4:
-            self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//1.33))
-            self.fluffs.append(self.fluff4)
+        
+        self.kitty1 = Kitty(pos=pygame.math.Vector2(200,-100))
+        self.kitty2 = Kitty(pos=pygame.math.Vector2(900,-300))
+        self.kitty3 = Kitty(pos=pygame.math.Vector2(900,-600))
+        
+        self.fluff = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//4),fluffball_color="fluffballt.")
+        self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color="fluffballp.")
+        #self.fluffs.append(self.fluff)
+        #if Game.players >= 2:
+        #    self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4))
+        #    self.fluffs.append(self.fluff2)
+        #if Game.players >= 3:
+        #    self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33))
+        #    self.fluffs.append(self.fluff3)
+        #if Game.players >= 4:
+        #    self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//1.33))
+        #    self.fluffs.append(self.fluff4)
             
         for x in range(Game.difficulty*6-1):
             while True:
@@ -668,10 +757,10 @@ class Viewer(object):
         
         if Game.difficulty == 4:
             for x in range(25):
-                self.babycat = Babycat(warp_on_edge=True, pos=pygame.math.Vector2(random.randint(0,Viewer.width),-random.randint(0,Viewer.height)))
+                Kitty(warp_on_edge=True, pos=pygame.math.Vector2(random.randint(0,Viewer.width),-random.randint(0,Viewer.height)))
         else:
             for x in range(Game.difficulty*3):
-                self.babycat = Babycat(warp_on_edge=True, pos=pygame.math.Vector2(random.randint(0,Viewer.width),-random.randint(0,Viewer.height)))
+                Kitty(warp_on_edge=True, pos=pygame.math.Vector2(random.randint(0,Viewer.width),-random.randint(0,Viewer.height)))
     
     def menu_run(self):
         """Not The mainloop"""
@@ -954,12 +1043,13 @@ class Viewer(object):
         self.snipertarget = None
         gameOver = False
         exittime = 0
-        Flytext(Viewer.width/2,Viewer.height/4,"Eat all Donuts and Cookies", (0,0,255), duration=10, fontsize=100)
-        Flytext(Viewer.width/2,Viewer.height/2,"and stay under 50 collisions", (0,0,255), duration=10, fontsize=100)
-        Flytext(Viewer.width/2,Viewer.height/1.33,"with the car wheels", (0,0,255), duration=10, fontsize=100)
+        #Flytext(Viewer.width/2,Viewer.height/4,"Eat all Donuts and Cookies", (0,0,255), duration=10, fontsize=100)
+        #Flytext(Viewer.width/2,Viewer.height/2,"and stay under 50 collisions", (0,0,255), duration=10, fontsize=100)
+        #Flytext(Viewer.width/2,Viewer.height/1.33,"with the car wheels", (0,0,255), duration=10, fontsize=100)
         
         
         crazytime = 0
+        crazytime_cooldown = 0
         while running:
             
             milliseconds = self.clock.tick(self.fps) #
@@ -974,10 +1064,21 @@ class Viewer(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                elif event.type == pygame.KEYUP:
+                    if event.key == pygame.K_t:
+                        for p in self.pawgroup:
+                            if p.bossnumber == self.kitty1.number:
+                                p.stop_play()
+                
+                        
+                        
+                
                 # ------- pressed and released key ------
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
+                    #if event.key == pygame.K_1:
+                     
                 #   if event.key == pygame.K_l:
                 #       self.fluff.move = pygame.math.Vector2(0,0)
                 #       self.fluff.pos = pygame.math.Vector2(Viewer.width/1.33,-Viewer.height/2)
@@ -990,9 +1091,18 @@ class Viewer(object):
             self.screen.blit(self.background, (0, 0))  # macht alles weiß
             if self.playtime < crazytime :
                 self.screen.fill((random.randint(0,255), random.randint(0,255), random.randint(0,255)))
+                
             # ------------ pressed keys ------
             pressed_keys = pygame.key.get_pressed()
 
+            if pressed_keys[pygame.K_t]:
+                # alle pfoten von kitty1 suchen
+                for p in self.pawgroup:
+                    if p.bossnumber == self.kitty1.number:
+                        p.play(angle=100)
+            
+            
+            
             if pressed_keys[pygame.K_RIGHT]:
                 self.fluff.move += pygame.math.Vector2(10,0)
             if pressed_keys[pygame.K_LEFT]:
@@ -1073,7 +1183,7 @@ class Viewer(object):
             # write text below sprites
             write(self.screen, "FPS: {:8.3}".format(
                 self.clock.get_fps() ), x=10, y=10)
-            write(self.screen, "Collisions:{}".format(self.collisions), x=Viewer.width-200, y=10)
+            #write(self.screen, "Collisions:{}".format(self.collisions), x=Viewer.width-200, y=10)
             self.allgroup.update(seconds)
             
             #if len(self.foodgroup) == 0:
@@ -1106,36 +1216,75 @@ class Viewer(object):
                 for z in crashgroup:
                     if z.__class__.__name__=="Autoreifen":
                         Flytext(f.pos.x,-f.pos.y,text="Uargh, ein Autoreifen!",color=(1,1,1),duration=5,fontsize=40)
-                        crazytime = self.playtime + 0.1
+                        #if random.random() < 0.1:
+                        if crazytime_cooldown <= self.playtime:
+                            crazytime = self.playtime + 0.1
+                            crazytime_cooldown = self.playtime + 5
+                        f.reifendamage +=100
                         #Fluffball makes a little jump if bouncing against a car wheel
                         f.move = f.move*-0.8
                         j = f.move.normalize()*25
                         f.pos += j
                         if len(self.foodgroup):
-                            self.collisions += 1
-                        if self.collisions == 50:
-                            Flytext(Viewer.width/2,Viewer.height/2,"Game over", (0,0,0), duration=10, fontsize=350)
-                            gameOver = True
+                        #    self.collisions += 1
+                        #if self.collisions == 50:
+                        #   Flytext(Viewer.width/2,Viewer.height/2,"Game over", (0,0,0), duration=10, fontsize=350)
+                        #    gameOver = True
                             exittime = self.playtime + 3
                         #(self, pos, maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravity=3.7,sparksmin=5,sparksmax=20):
                         dist = f.pos-z.pos
                         point = z.pos + dist * 0.5
-                        
-                        Explosion(pos=point, what ="Spark", maxspeed=100, minspeed=50, color=(0,0,0), maxduration=1.5, gravityy=0, sparksmin=100, sparksmax=300)
+                        a = -dist.angle_to(pygame.math.Vector2(1,0))
+                        a1 = a -15
+                        a2 = a + 15
+                        Explosion(pos=point, min_angle=a1, max_angle=a2, what ="Spark", maxspeed=100, minspeed=50, color=(0,0,0), maxduration=2.5, gravityy=0, sparksmin=10, sparksmax=30)
             #------------collision detection between fluffball and other fluffball-----           
             for f in self.fluffgroup:
                 crashgroup = pygame.sprite.spritecollide(f, self.fluffgroup, False, pygame.sprite.collide_mask)
                 for otherf in crashgroup:
                     if f.number > otherf.number:
                         elastic_collision(f, otherf)   
-            #-----------collision detection between babycat and other stuff------
-            for b in self.babycatgroup:
-                crashgroup = pygame.sprite.spritecollide(b, self.fluffgroup, False, pygame.sprite.collide_mask)
-                for c in crashgroup:
-                    m = pygame.math.Vector2(random.randint(150,350),0)
-                    m = m.rotate(random.randint(0,360))
-                    c.move = m
-            # ----------- clear, draw , update, flip -----------------
+            #-----------collision detection between kitty and other stuff------
+          #  for b in self.kittygroup:
+          #      crashgroup = pygame.sprite.spritecollide(b, self.fluffgroup, False, pygame.sprite.collide_mask)
+          #      for c in crashgroup:
+          #          m = pygame.math.Vector2(random.randint(150,350),0)
+          #          m = m.rotate(random.randint(0,360))
+          #          c.move = m
+            
+            # ----- all paws in idle position ----- 
+            for k in self.kittygroup:
+                for p in self.pawgroup:
+                    if p.bossnumber == k.number:
+                        p.stop_play()
+
+            #------ flapping ? -------
+            #if pressed_keys[pygame.K_1]:              
+            for k in self.kittygroup:
+                if k.state == "flap":
+                    # todo: kitty bewegen
+                    for p in self.pawgroup:
+                        if p.bossnumber == k.number:
+                            p.flap()
+
+                for f in self.fluffgroup:
+                    # --------- kitty plays with ball -------
+                    diff= f.pos - k.pos
+                    diff.y *= -1
+                    if diff.length()<150:
+                        a=diff.angle_to(pygame.math.Vector2(1,0))
+                        # alle pfoten von kitty1 suchen
+                        for p in self.pawgroup:
+                            if p.bossnumber == k.number:
+                                p.play(angle=a)
+                                #self.fluff.move += diff * 0.5
+                                #vollbremsung
+                                f.move = pygame.math.Vector2(0,0)
+                                rv = pygame.math.Vector2(random.random()*150+150,0)
+                                rv.rotate(random.randint(0,360))
+                                f.move+=rv 
+                    
+                            # ----------- clear, draw , update, flip -----------------
             self.allgroup.draw(self.screen)            
             # -------- next frame -------------
             pygame.display.flip()
