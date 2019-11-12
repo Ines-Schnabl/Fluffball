@@ -326,7 +326,7 @@ class Fluffball(VectorSprite):
         VectorSprite.update(self, seconds)
         if self.reifendamage > 0:
             self.reifendamage -= 5
-        print("reifendamage", self.reifendamage)
+        #print("reifendamage", self.reifendamage)
         
     def create_image(self):
         self.image = Viewer.images[self.fluffball_color]
@@ -338,13 +338,93 @@ class Kitty(VectorSprite):
     def _overwrite_parameters(self):
         Paw(bossnumber = self.number, side="right",sticky_with_boss=True)
         Paw(bossnumber = self.number, side="left",sticky_with_boss=True)
-        self.chance_to_flap = 0.01
+        self.chance_to_flap = 0.005
         self.chance_to_sit = 0.01
         self.state="sit"
         self.bounce_on_edge=True
+        self.glow = False
+        self.glow2 = False
+        self.sleep = False
+        self.sleep_time =0
+        self.glow_time = 0
+        self.glow2_time = 0
+        self.i = 0
+        
+    def start_glowing(self):
+        self.glow = True
+        self.glow_time = self.age + 0.25
+        
+        
+    def end_glowing(self):
+        self.glow2 = True
+        self.glow2_time = self.age + 0.25    
+        
+    def next_image(self):
+        if self.i < 11:
+            self.i += 1
+            self.handle_image(self.images[self.i])
+        
+    def previous_image(self):
+        if self.i > 0:
+            self.i -= 1
+            self.handle_image(self.images[self.i])
+            
+    def start_sleeping(self):
+        self.sleep = True
+        self.sleep_time = self.age + random.randint(1,30)
+        #self.sleep_image = ("kittys")
+        self.image = self.sleep_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.pos.x, -self.pos.y)
+        
+        
         
     def update(self,seconds):
         VectorSprite.update(self,seconds)
+        # will ich glühende Augen haben?
+        
+           
+        if self.sleep:
+              self.image = self.sleep_image
+              #return
+              self.move = pygame.math.Vector2(0,0)
+              
+              # zzzzz
+              if random.random() < 0.01:
+                  Flytext(x = self.pos.x, y =  -self.pos.y-70, text="Z", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
+                          dx = random.random(),dy = -10,
+                          duration=3, fontsize=random.randint(10,50))
+                  #self.state = "sit"
+                
+              if self.age > self.sleep_time:
+                  #self.sleep_time = self.age + random.randint(1,50)
+                  self.sleep = False
+              else:
+                  return    
+        
+        if random.random()<0.0007: #0.0007:
+            self.start_sleeping()
+                
+        
+        if random.random()<0.001:      # 30 x pro sekunde
+            self.start_glowing()
+        if self.glow:
+            if self.age > self.glow_time:
+                self.next_image()
+                self.glow_time = self.age + 0.25
+                if self.i == 11:
+                    self.glow = False
+                    self.end_glowing()
+        
+        
+        
+        if self.glow2:
+            if self.age > self.glow2_time:
+                self.previous_image()
+                self.glow2_time = self.age + 0.25
+                if self.i == 0:
+                    self.glow2 = False
+        
         if self.state == "sit":
             if random.random() < self.chance_to_flap:
                 self.state="flap"
@@ -355,12 +435,25 @@ class Kitty(VectorSprite):
             if random.random() < self.chance_to_sit:
                 self.state="sit"
                 self.move=pygame.math.Vector2(0,0)
+                
+        elif random.random() <= 0.05:
+                self.kitty.start_gowing
     
     def create_image(self):
-        self.image = Viewer.images["kitty"]
-        self.image.convert_alpha()
-        self.image0 = self.image.copy()
-        self.rect = self.image.get_rect()
+        self.images = ["kitty0","kitty1", "kitty2", "kitty3", "kitty4", "kitty5", "kitty6", "kitty7", "kitty8", "kitty9", "kitty10", "kitty11" ]
+        #for i in self.images:
+        #    self.handle_image(i)
+        self.sleep_image = Viewer.images["kittys"]
+        self.handle_image(self.images[0])
+            
+            
+    def handle_image(self, i):
+            self.image = Viewer.images[i]
+            self.image.convert_alpha()
+            self.image0 = self.image.copy()
+            
+            self.rect = self.image.get_rect()
+            self.rect.center = (self.pos.x, -self.pos.y)
         
 
 class Paw(VectorSprite):
@@ -620,7 +713,7 @@ class Viewer(object):
         #    self.background = pygame.Surface(self.screen.get_size()).convert()
         #    self.background.fill((255,255,255)) # fill background white
         self.background = pygame.Surface(self.screen.get_size()).convert()
-        self.background.fill((255,255,255))
+        self.background.fill((0,190,0))
         self.background = pygame.transform.scale(self.background,
                           (Viewer.width,Viewer.height))
         self.background.convert()
@@ -634,10 +727,34 @@ class Viewer(object):
         self.loadbackground()
         
     def load_sprites(self):
-        Viewer.images["kitty"] = pygame.image.load(os.path.join("data", "kitty.png")).convert_alpha()
-        Viewer.images["kitty"] = pygame.transform.scale(Viewer.images["kitty"], (150,150))
-        Viewer.images["paw"] = pygame.image.load(os.path.join("data", "paw.png")).convert_alpha()
-        Viewer.images["paw"] = pygame.transform.scale(Viewer.images["paw"], (145,30))
+        Viewer.images["kitty0"] = pygame.image.load(os.path.join("data", "kitty2.png")).convert_alpha()
+        Viewer.images["kitty0"] = pygame.transform.scale(Viewer.images["kitty0"], (150,150))
+        Viewer.images["kitty1"] = pygame.image.load(os.path.join("data", "kittyb1.png")).convert_alpha()
+        Viewer.images["kitty1"] = pygame.transform.scale(Viewer.images["kitty1"], (150,150))
+        Viewer.images["kitty2"] = pygame.image.load(os.path.join("data", "kittyb2.png")).convert_alpha()
+        Viewer.images["kitty2"] = pygame.transform.scale(Viewer.images["kitty2"], (150,150))
+        Viewer.images["kitty3"] = pygame.image.load(os.path.join("data", "kittyb3.png")).convert_alpha()
+        Viewer.images["kitty3"] = pygame.transform.scale(Viewer.images["kitty3"], (150,150))
+        Viewer.images["kitty4"] = pygame.image.load(os.path.join("data", "kittyb4.png")).convert_alpha()
+        Viewer.images["kitty4"] = pygame.transform.scale(Viewer.images["kitty4"], (150,150))
+        Viewer.images["kitty5"] = pygame.image.load(os.path.join("data", "kittyb5.png")).convert_alpha()
+        Viewer.images["kitty5"] = pygame.transform.scale(Viewer.images["kitty5"], (150,150))
+        Viewer.images["kitty6"] = pygame.image.load(os.path.join("data", "kittyb6.png")).convert_alpha()
+        Viewer.images["kitty6"] = pygame.transform.scale(Viewer.images["kitty6"], (150,150))
+        Viewer.images["kitty7"] = pygame.image.load(os.path.join("data", "kittyb7.png")).convert_alpha()
+        Viewer.images["kitty7"] = pygame.transform.scale(Viewer.images["kitty7"], (150,150))
+        Viewer.images["kitty8"] = pygame.image.load(os.path.join("data", "kittyb8.png")).convert_alpha()
+        Viewer.images["kitty8"] = pygame.transform.scale(Viewer.images["kitty8"], (150,150))
+        Viewer.images["kitty9"] = pygame.image.load(os.path.join("data", "kittyb9.png")).convert_alpha()
+        Viewer.images["kitty9"] = pygame.transform.scale(Viewer.images["kitty9"], (150,150))
+        Viewer.images["kitty10"] = pygame.image.load(os.path.join("data", "kittyb10.png")).convert_alpha()
+        Viewer.images["kitty10"] = pygame.transform.scale(Viewer.images["kitty10"], (150,150))
+        Viewer.images["kitty11"] = pygame.image.load(os.path.join("data", "kittyb11.png")).convert_alpha()
+        Viewer.images["kitty11"] = pygame.transform.scale(Viewer.images["kitty11"], (150,150))
+        Viewer.images["kittys"] = pygame.image.load(os.path.join("data", "kittys.png")).convert_alpha()
+        Viewer.images["kittys"] = pygame.transform.scale(Viewer.images["kittys"], (150,150))
+        Viewer.images["paw"] = pygame.image.load(os.path.join("data", "paw2.png")).convert_alpha()
+        Viewer.images["paw"] = pygame.transform.scale(Viewer.images["paw"], (145,130))
         Viewer.images["fluffballb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnb.png")).convert_alpha()
         Viewer.images["fluffballb."] = pygame.transform.scale(Viewer.images["fluffballb."], (90,90))
         Viewer.images["fluffballgb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahngb.png")).convert_alpha()
@@ -1086,7 +1203,17 @@ class Viewer(object):
                 #       self.fluff2.move = pygame.math.Vector2(0,0)
                 #       self.fluff2.pos = pygame.math.Vector2(Viewer.width/4,-Viewer.height/2)
                     elif event.key == pygame.K_m:
-                        self.menu_run() 
+                        self.menu_run()
+                        
+                    elif event.key == pygame.K_1:
+                        for w in self.kittygroup:
+                            w.next_image()
+                    elif event.key == pygame.K_2:
+                        for q in self.kittygroup:
+                            q.previous_image()
+                            
+                    elif event.key == pygame.K_3:
+                        self.kitty1.start_glowing()
             # delete everything on screen
             self.screen.blit(self.background, (0, 0))  # macht alles weiß
             if self.playtime < crazytime :
@@ -1215,11 +1342,14 @@ class Viewer(object):
                              False,pygame.sprite.collide_mask)
                 for z in crashgroup:
                     if z.__class__.__name__=="Autoreifen":
-                        Flytext(f.pos.x,-f.pos.y,text="Uargh, ein Autoreifen!",color=(1,1,1),duration=5,fontsize=40)
-                        #if random.random() < 0.1:
                         if crazytime_cooldown <= self.playtime:
                             crazytime = self.playtime + 0.1
-                            crazytime_cooldown = self.playtime + 5
+                            crazytime_cooldown = self.playtime + 0.75
+                            Flytext(f.pos.x,-f.pos.y,text="Uargh, ein Autoreifen!",color=(1,1,1),duration=5,fontsize=40)
+                        #if random.random() < 0.1:
+                        #if crazytime_cooldown <= self.playtime:
+                        #    crazytime = self.playtime + 0.1
+                        #    crazytime_cooldown = self.playtime + 1
                         f.reifendamage +=100
                         #Fluffball makes a little jump if bouncing against a car wheel
                         f.move = f.move*-0.8
