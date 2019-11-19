@@ -390,17 +390,21 @@ class Kitty(VectorSprite):
               self.move = pygame.math.Vector2(0,0)
               
               # zzzzz
-              if random.random() < 0.01:
+              if random.random() < 0.03:     #0,01
                   Flytext(x = self.pos.x, y =  -self.pos.y-70, text="Z", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
                           dx = random.random(),dy = -10,
                           duration=3, fontsize=random.randint(10,50))
-                  #self.state = "sit"
-                
+              
               if self.age > self.sleep_time:
-                  #self.sleep_time = self.age + random.randint(1,50)
+                  self.image = self.notsleep_image
                   self.sleep = False
               else:
                   return    
+        
+        #else:
+        #    Flytext(x = self.pos.x, y =  -self.pos.y-70, text="W", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
+        #                  dx = random.random(),dy = -10,
+        #                  duration=3, fontsize=random.randint(10,50))
         
         if random.random()<0.0007: #0.0007:
             self.start_sleeping()
@@ -444,6 +448,7 @@ class Kitty(VectorSprite):
         #for i in self.images:
         #    self.handle_image(i)
         self.sleep_image = Viewer.images["kittys"]
+        self.notsleep_image = Viewer.images["kitty0"]
         self.handle_image(self.images[0])
             
             
@@ -496,8 +501,17 @@ class Paw(VectorSprite):
         
     def update(self, seconds):
         VectorSprite.update(self,seconds)
+        self.correction()  
+        if self.boss.sleep:
+        #    self.visible = False
+            print("mein boss schläft")
+            self.rect.center = (0,-400) #  = pygame.math.Vector2(0, 100)
+        #else:
+        #    self.visible = True
         
-        self.correction()
+       
+    
+    
     
     def stop_play(self):
         self.set_angle(270)
@@ -1312,6 +1326,7 @@ class Viewer(object):
                 self.clock.get_fps() ), x=10, y=10)
             #write(self.screen, "Collisions:{}".format(self.collisions), x=Viewer.width-200, y=10)
             self.allgroup.update(seconds)
+            #self.pawgroup.update(seconds)
             
             #if len(self.foodgroup) == 0:
             #    Flytext(Viewer.width/2,Viewer.width/2,"Alles gemumpft... Päuschen!", (0,0,255), duration=10, fontsize=100)
@@ -1415,7 +1430,12 @@ class Viewer(object):
                                 f.move+=rv 
                     
                             # ----------- clear, draw , update, flip -----------------
-            self.allgroup.draw(self.screen)            
+            self.allgroup.draw(self.screen)
+            #for p in self.pawgroup:
+            #    if not p.boss.sleep:
+            #        p.draw(self.screen)
+                    
+                        
             # -------- next frame -------------
             pygame.display.flip()
         #-----------------------------------------------------
