@@ -12,7 +12,11 @@ Spielbar für bis zu vier Person.
 
 Um das Spiel zu spielen benötigt man:
  - Python 3  (https://www.python.org/downloads/)
- - Pygame:  python3 -m pip install -U pygame --user
+ - Pygame:  python -m pip install -U pygame --user
+
+Um das Spiel zu starten lade alle Dateien herunter und gehen in den Ordner und start das Spiel mit
+
+python Fluffball.py
 
  
 
