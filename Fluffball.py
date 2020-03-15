@@ -1,12 +1,12 @@
 """
 author: Ines Schnabl
-email: horstjens@gmail.com
-contact: see http://spielend-programmieren.at/de:kontakt
+email: ines@schnabl.sc
+contact: ines@schnabl.sc
 license: gpl, see http://www.gnu.org/licenses/gpl-3.0.de.html
 download: 
-idea: clean python3/pygame template using pygame.math.vector2
-
+idea: A game for up to 4 players with fluffy balls, donuts, cookies and cats
 """
+
 import pygame
 import random
 import os
@@ -360,7 +360,7 @@ class Kitty(VectorSprite):
         self.glow2_time = self.age + 0.25    
         
     def next_image(self):
-        if self.i < 11:
+        if self.i < 14:
             self.i += 1
             self.handle_image(self.images[self.i])
         
@@ -371,7 +371,7 @@ class Kitty(VectorSprite):
             
     def start_sleeping(self):
         self.sleep = True
-        self.sleep_time = self.age + random.randint(1,30)
+        self.sleep_time = self.age + random.randint(3,20)
         #self.sleep_image = ("kittys")
         self.image = self.sleep_image
         self.rect = self.image.get_rect()
@@ -391,20 +391,19 @@ class Kitty(VectorSprite):
               
               # zzzzz
               if random.random() < 0.03:     #0,01
-                  Flytext(x = self.pos.x, y =  -self.pos.y-70, text="Z", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
+                  Flytext(x = self.pos.x, y =  -self.pos.y-50, text="Z", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
                           dx = random.random(),dy = -10,
                           duration=3, fontsize=random.randint(10,50))
               
               if self.age > self.sleep_time:
                   self.image = self.notsleep_image
+                  self.rect = self.image.get_rect()
+                  self.rect.center = (self.pos.x, -self.pos.y)
+        
                   self.sleep = False
               else:
                   return    
         
-        #else:
-        #    Flytext(x = self.pos.x, y =  -self.pos.y-70, text="W", color=(random.randint(0,255), random.randint(0,255), random.randint(0,255)),
-        #                  dx = random.random(),dy = -10,
-        #                  duration=3, fontsize=random.randint(10,50))
         
         if random.random()<0.0007: #0.0007:
             self.start_sleeping()
@@ -416,7 +415,7 @@ class Kitty(VectorSprite):
             if self.age > self.glow_time:
                 self.next_image()
                 self.glow_time = self.age + 0.25
-                if self.i == 11:
+                if self.i == 14:
                     self.glow = False
                     self.end_glowing()
         
@@ -444,9 +443,8 @@ class Kitty(VectorSprite):
                 self.kitty.start_gowing
     
     def create_image(self):
-        self.images = ["kitty0","kitty1", "kitty2", "kitty3", "kitty4", "kitty5", "kitty6", "kitty7", "kitty8", "kitty9", "kitty10", "kitty11" ]
-        #for i in self.images:
-        #    self.handle_image(i)
+        self.images = ["kitty0","kitty1", "kitty2", "kitty3", "kitty4", "kitty5", "kitty6", "kitty7", "kitty8", "kitty9", "kitty10", "kitty11", "kitty12", "kitty13", "kitty14"]
+       
         self.sleep_image = Viewer.images["kittys"]
         self.notsleep_image = Viewer.images["kitty0"]
         self.handle_image(self.images[0])
@@ -471,26 +469,29 @@ class Paw(VectorSprite):
     
     def correction(self):    
         if self.side == "right":
-            self.rect.centerx = self.boss.rect.centerx + 5
-            self.pos.x = self.boss.pos.x + 5
+            self.rect.centerx = self.boss.rect.centerx + 15
+            #self.pos.x = self.boss.pos.x + 5
             self.rect.centery = self.boss.rect.centery + 10
-            self.pos.y = self.boss.pos.y - 10
+            #self.pos.y = self.boss.pos.y - 10
         elif self.side == "left":
-            self.rect.centerx = self.boss.rect.centerx - 25
-            self.pos.x = self.boss.pos.x - 25
+            self.rect.centerx = self.boss.rect.centerx - 15
+            #self.pos.x = self.boss.pos.x - 25
             self.rect.centery = self.boss.rect.centery + 10
-            self.pos.y = self.boss.pos.y - 10
+            #self.pos.y = self.boss.pos.y - 10
         
     def flap(self):
+        self.boss.chance_to_flap = 0.001
         #self.correction()
-        a=random.randint(-30,30)
+        a=random.randint(240,300) #240, 300
         #("flapwinkel", a)
         if self.side == "right":
             self.set_angle(a)
         else:
-            self.set_angle(180-a)    
+            self.set_angle(a-180)    
         
     def play(self,angle=0):
+        self.boss.chance_to_flap += 0.005
+        
         if angle < 90 and angle > -90:
             if self.side == "right":
                 self.set_angle(angle + random.randint(-5,5))
@@ -503,18 +504,15 @@ class Paw(VectorSprite):
         VectorSprite.update(self,seconds)
         self.correction()  
         if self.boss.sleep:
-        #    self.visible = False
-            print("mein boss schläft")
+        
             self.rect.center = (0,-400) #  = pygame.math.Vector2(0, 100)
-        #else:
-        #    self.visible = True
         
        
     
-    
-    
     def stop_play(self):
-        self.set_angle(270)
+       # self.boss.chance_to_flap = 0.005
+    
+        self.set_angle(180)
         
     def create_image(self):
         self.image = Viewer.images["paw"]
@@ -632,41 +630,62 @@ class Viewer(object):
     height = 0
     images={}
     
-    menu =  {"main":      ["Resume", "Help", "Credits", "Settings","Fluffballs"],
-            "Help":       ["back", "Fluffball", "Donut", "Cookie", "Car wheel", "Cat"],
-            "Credits":    ["back", "Ines Schnabl", "Martin Schnabl", ],
-            "Settings":   ["back", "Screenresolution", "Fullscreen", "Difficulty"],
-            "Resolution": ["back"],
-            "Fullscreen": ["back", "True", "False"],
-            "Difficulty": ["back", "Easy", "Medium", "Hard", "Impossible"],
-            "Fluffballs": ["back", "Players", "Colors"],
-            "Players":     ["back", "1 Player", "2 Player","3 Player", "4 Player"],
-            "Colors":     ["back", "Fluffball 1", "Fluffball 2","Fluffball 3", "Fluffball 4"],
-            "Fluffball 1":["back", "red", "yellow", "green", "turquoise", "blue", "purple"],
-            "Fluffball 2":["back", "red", "yellow", "green", "turquoise", "blue", "purple"],
-            "Fluffball 3":["back", "red", "yellow", "green", "turquoise", "blue", "purple"],
-            "Fluffball 4":["back", "red", "yellow", "green", "turquoise", "blue", "purple"]
+    menu =  {"main":         ["Resume", "Hilfe", "Credits", "Settings","Fluffbälle", "Steuerung"],
+            "Hilfe":         ["zurück", "Fluffball", "Donut", "Cookie", "Autoreifen", "Katze", "Spielziel"],
+            "Credits":       ["zurück", "Ines Schnabl", "Martin Schnabl","Bilder","Musik" ],
+            "Settings":      ["zurück", 
+                              #"Screenresolution", 
+                              "Fullscreen", "Schwierigkeit"],
+            "Resolution":    ["zurück", ],
+            "Fullscreen":    ["zurück", "Fullscreen Ein", "Fullscreen Aus"],
+            "Schwierigkeit": ["zurück", "Easy", "Medium", "Hard", "Impossible"],
+            "Fluffbälle":    ["zurück", "Spieler", "Farbe"],
+            "Spieler":       ["zurück", "1 Spieler", "2 Spieler","3 Spieler", "4 Spieler"],
+            "Farbe":         ["zurück", "Fluffball 1", "Fluffball 2","Fluffball 3", "Fluffball 4"],
+            "Fluffball 1":   ["zurück", "rot", "gelb", "grün", "türkis", "blau", "violett"],
+            "Fluffball 2":   ["zurück", "rot", "gelb", "grün", "türkis", "blau", "violett"],
+            "Fluffball 3":   ["zurück", "rot", "gelb", "grün", "türkis", "blau", "violett"],
+            "Fluffball 4":   ["zurück", "rot", "gelb", "grün", "türkis", "blau", "violett"]
             }
             
             
             
-    descr = {"Resume" :           ["Resume to the", "game"],                                           #resume
-             "Martin schnabl" :   ["Ines' sixteen year", "old brother", "who helps her,", "when she is again", "confused by python"],
-             "Ines schnabl":      ["A fourteen year old girl", "who programmed the game.", "But she is very often", "confused by python"],
-             "Settings" :         ["Change the", "screenresolution", "only in the", "beginning!"],
-             "Fluffball" :        ["A fluffy Ball", "who trys to eat", "as much donuts and cookies", "as possible"],
-             "Donut" :            ["A delicious Donut,", "one of the favourite", "foods of Fluffballs"],
-             "Cookie" :           ["A yummy Cookie.", "Fluffballs and", "Pummeleinhörner love it", "because it has so much", "sugar in it"],
-             "Car wheel" :        ["A not so tasty car wheel.", "If Fluffballs take", "accidently a bite", "of a car wheel", "they will roll away", "in the other direction"],
-             "Cat"  :             ["A cute Cat", "who whants to play", "with the fluffballs"],
-             "Players":           ["Change the amount of", "Fluffballs in the game."],
-             "Colors":            ["Change the color of the Fluffballs."]
+    descr = {"Resume" :           ["Zurück zum Spiel"],                                           #resume
+             "Martin Schnabl" :   ["Mein großer Bruder hat","mich zum Programmieren","inspiriert und","mir Python erklärt.","","(Für einen großen Bruder","ist er voll in Ordnung.)"],
+             "Ines Schnabl":      ["Mein Ziel ist es mehr","Flauschigkeit in die Welt","zu bringen.","","Das ist mein erstes Spiel,","das ich selber program-","miert habe."],
+             "Bilder":            ["Katzen gezeichnet von","Ines Schnabl.","","Andere Bilder:","Lizenzfrei","von www.pixabay.com"],
+             "Musik":             ["Fountain of Diana","gespielt","von Ines Schnabl","am Klavier"],
+             "Screensolution" :   ["Ändere die", "screenresolution", "nur am Anfang"],
+             "Fluffball" :        ["Ein flauschiger Ball der", "versucht so viele Donuts", "und Cookies wie möglich zu","essen. Doch leider hat er",
+                                   "seine Brille verlegt. Weil", "der Fluffball nicht unter-","scheiden kann, was essbar","und was ein Autoreifen ist,",
+                                   "musst du ihm helfen. Wenn","der Fluffball 100-mal auf", "Autoreifen trifft hast du", "verloren."],
+             "Donut" :            ["Ein super leckerer Donut,", "einer der Lieblingssnacks", "von Fluffbällen."],
+             "Cookie" :           ["Ein knuspriger Cookie.", "Fluffbälle lieben ihn,", "weil er so  viel Zucker", "und Schokolade enthält."],
+             "Autoreifen" :       ["Ein nicht so gut", "schmeckender Autoreifen.", "Wenn ein Fluffball ihn", "versehentlich anknabbert", 
+                                   "rollt der Fluffball in ", "die andere Richtung davon.","Wenn der Fluffball den", "Autoreifen 100-mal an-",
+                                   "knabbert wird dem Fluff-", "ball schlecht und du","hast verloren."],
+             "Katze"  :           ["Ein niedliches Kätzchen,", "das gerne mit Fluffbällen", "spielt.", "Es denkt es könnte fliegen,", "aber es ist nicht so", 
+                                   "süß wie es aussieht,", "denn es hat einen Laserblick.", "(der Fluffbälle zum Glück", "nicht verletzt).", "Manchmal schläft das", "Kätzchen auch ein."],
+             "Spieler":           ["Ändere die Anzahl von", "Fluffbällen im Spiel, damit", "deine Freunde und deine", "Verwandten mitspielen können."],
+             "1 Spieler":         ["Steuerung:", "Fluffball 1, mit Pfeiltasten"],
+             "2 Spieler":         ["Steuerung:", "Fluffball 1, mit Pfeiltasten", "Fluffball 2, mit w a s d"],
+             "3 Spieler":         ["Steuerung:", "Fluffball 1, mit Pfeiltasten", "Fluffball 2, mit w a s d", "Fluffball 3, mit i j k l"],
+             "4 Spieler":         ["Steuerung:", "Fluffball 1, mit Pfeiltasten", "Fluffball 2, mit w a s d", "Fluffball 3, mit i j k l", "Fluffball 4, mit g v b n"],
+             "Farbe":             ["Ändere die Farbe",  "der Fluffbälle."],
+             "Steuerung":         ["Fluffball 1, mit Pfeiltasten", "Fluffball 2, mit w a s d", "Fluffball 3, mit i j k l", "Fluffball 4, mit g v b n", "", "mit m öffnet man das Menü"],
+             "Spielziel":         ["Gewinnen: Alle Cookies und", "Donuts gegessen.","", "Verlieren: Fluffball trifft", "100-mal oder öfter auf", "einen Autoreifen."]
              }
-    menu_images = {"Fluffball" : "fluffball_menu",
-                   "Donut"     : "donut_menu",
-                   "Cookie"    : "cookie_menu",
-                   "Car wheel" : "car wheel_menu",
-                   "Cat"       : "baby cat_menu",
+    menu_images = {"Fluffball"  : "fluffball_menu",
+                   "Donut"      : "donut_menu",
+                   "Cookie"     : "cookie_menu",
+                   "Autoreifen" : "car wheel_menu",
+                   "Katze"      : "baby cat_menu",
+                   "rot"        : "fluffballr.",
+                   "gelb"       : "fluffballgb.",
+                   "grün"       : "fluffballgn.",
+                   "blau"       : "fluffballb.",
+                   "türkis"     : "fluffballt.",
+                   "violett"    : "fluffballp.",
                    }
  
     history = ["main"]
@@ -706,34 +725,38 @@ class Viewer(object):
         self.prepare_sprites()
         self.loadbackground()
         # --- create screen resolution list ---
-        li = ["back"]
+        li = ["zurück"]
         for i in pygame.display.list_modes():
             # li is something like "(800, 600)"
             pair = str(i)
             comma = pair.find(",")
             x = pair[1:comma]
             y = pair[comma+2:-1]
+            #print(" Screen "+str(x)+"  "+str(y))
             li.append(str(x)+"x"+str(y))
         Viewer.menu["Screenresolution"] = li
+        #Viewer.menu["Screenresolution"] = ["zurück","1430x800","800x600"]
         self.set_screenresolution()
+        #print("Spiele meine Musik")
+        pygame.mixer.init()
+        pygame.mixer.music.load(os.path.join("data", "FOUNTAIN.wav"))
+        pygame.mixer.music.play(loops=-1)
 
+
+
+    def getFluffFarbe():
+        return Viewer.FluffFarbList[random.randint(0,len(Viewer.FluffFarbList)-1)]
+        
     def loadbackground(self):
         
-        #try:
-        #    self.background = pygame.image.load(os.path.join("data",
-        #         self.backgroundfilenames[Viewer.wave %
-        #         len(self.backgroundfilenames)]))
-        #except:
-        #    self.background = pygame.Surface(self.screen.get_size()).convert()
-        #    self.background.fill((255,255,255)) # fill background white
         self.background = pygame.Surface(self.screen.get_size()).convert()
-        self.background.fill((0,190,0))
+        self.background.fill((255,255,255))
         self.background = pygame.transform.scale(self.background,
                           (Viewer.width,Viewer.height))
         self.background.convert()
         
     def set_screenresolution(self):
-        print(self.width, self.height)
+       # print(self.width, self.height)
         if Viewer.fullscreen:
              self.screen = pygame.display.set_mode((self.width, self.height), pygame.DOUBLEBUF|pygame.FULLSCREEN)
         else:
@@ -741,34 +764,44 @@ class Viewer(object):
         self.loadbackground()
         
     def load_sprites(self):
-        Viewer.images["kitty0"] = pygame.image.load(os.path.join("data", "kitty2.png")).convert_alpha()
-        Viewer.images["kitty0"] = pygame.transform.scale(Viewer.images["kitty0"], (150,150))
-        Viewer.images["kitty1"] = pygame.image.load(os.path.join("data", "kittyb1.png")).convert_alpha()
-        Viewer.images["kitty1"] = pygame.transform.scale(Viewer.images["kitty1"], (150,150))
-        Viewer.images["kitty2"] = pygame.image.load(os.path.join("data", "kittyb2.png")).convert_alpha()
-        Viewer.images["kitty2"] = pygame.transform.scale(Viewer.images["kitty2"], (150,150))
-        Viewer.images["kitty3"] = pygame.image.load(os.path.join("data", "kittyb3.png")).convert_alpha()
-        Viewer.images["kitty3"] = pygame.transform.scale(Viewer.images["kitty3"], (150,150))
-        Viewer.images["kitty4"] = pygame.image.load(os.path.join("data", "kittyb4.png")).convert_alpha()
-        Viewer.images["kitty4"] = pygame.transform.scale(Viewer.images["kitty4"], (150,150))
-        Viewer.images["kitty5"] = pygame.image.load(os.path.join("data", "kittyb5.png")).convert_alpha()
-        Viewer.images["kitty5"] = pygame.transform.scale(Viewer.images["kitty5"], (150,150))
-        Viewer.images["kitty6"] = pygame.image.load(os.path.join("data", "kittyb6.png")).convert_alpha()
-        Viewer.images["kitty6"] = pygame.transform.scale(Viewer.images["kitty6"], (150,150))
-        Viewer.images["kitty7"] = pygame.image.load(os.path.join("data", "kittyb7.png")).convert_alpha()
-        Viewer.images["kitty7"] = pygame.transform.scale(Viewer.images["kitty7"], (150,150))
-        Viewer.images["kitty8"] = pygame.image.load(os.path.join("data", "kittyb8.png")).convert_alpha()
-        Viewer.images["kitty8"] = pygame.transform.scale(Viewer.images["kitty8"], (150,150))
-        Viewer.images["kitty9"] = pygame.image.load(os.path.join("data", "kittyb9.png")).convert_alpha()
-        Viewer.images["kitty9"] = pygame.transform.scale(Viewer.images["kitty9"], (150,150))
-        Viewer.images["kitty10"] = pygame.image.load(os.path.join("data", "kittyb10.png")).convert_alpha()
-        Viewer.images["kitty10"] = pygame.transform.scale(Viewer.images["kitty10"], (150,150))
-        Viewer.images["kitty11"] = pygame.image.load(os.path.join("data", "kittyb11.png")).convert_alpha()
-        Viewer.images["kitty11"] = pygame.transform.scale(Viewer.images["kitty11"], (150,150))
+        Viewer.images["kitty0"] = pygame.image.load(os.path.join("data", "kitty0.png")).convert_alpha()
+        Viewer.images["kitty0"] = pygame.transform.scale(Viewer.images["kitty0"], (250,175))
+        Viewer.images["kitty1"] = pygame.image.load(os.path.join("data", "kitty1.png")).convert_alpha()
+        Viewer.images["kitty1"] = pygame.transform.scale(Viewer.images["kitty1"], (250,175))
+        Viewer.images["kitty2"] = pygame.image.load(os.path.join("data", "kitty2.png")).convert_alpha()
+        Viewer.images["kitty2"] = pygame.transform.scale(Viewer.images["kitty2"], (250,175))
+        Viewer.images["kitty3"] = pygame.image.load(os.path.join("data", "kitty3.png")).convert_alpha()
+        Viewer.images["kitty3"] = pygame.transform.scale(Viewer.images["kitty3"], (250,175))
+        Viewer.images["kitty4"] = pygame.image.load(os.path.join("data", "kitty4.png")).convert_alpha()
+        Viewer.images["kitty4"] = pygame.transform.scale(Viewer.images["kitty4"], (250,175))
+        Viewer.images["kitty5"] = pygame.image.load(os.path.join("data", "kitty5.png")).convert_alpha()
+        Viewer.images["kitty5"] = pygame.transform.scale(Viewer.images["kitty5"], (250,175))
+        Viewer.images["kitty6"] = pygame.image.load(os.path.join("data", "kitty6.png")).convert_alpha()
+        Viewer.images["kitty6"] = pygame.transform.scale(Viewer.images["kitty6"], (250,175))
+        Viewer.images["kitty7"] = pygame.image.load(os.path.join("data", "kitty7.png")).convert_alpha()
+        Viewer.images["kitty7"] = pygame.transform.scale(Viewer.images["kitty7"], (250,175))
+        Viewer.images["kitty8"] = pygame.image.load(os.path.join("data", "kitty8.png")).convert_alpha()
+        Viewer.images["kitty8"] = pygame.transform.scale(Viewer.images["kitty8"], (250,175))
+        Viewer.images["kitty9"] = pygame.image.load(os.path.join("data", "kitty9.png")).convert_alpha()
+        Viewer.images["kitty9"] = pygame.transform.scale(Viewer.images["kitty9"], (250,175))
+        Viewer.images["kitty10"] = pygame.image.load(os.path.join("data", "kitty10.png")).convert_alpha()
+        Viewer.images["kitty10"] = pygame.transform.scale(Viewer.images["kitty10"], (250,175))
+        Viewer.images["kitty11"] = pygame.image.load(os.path.join("data", "kitty11.png")).convert_alpha()
+        Viewer.images["kitty11"] = pygame.transform.scale(Viewer.images["kitty11"], (250,175))
+        Viewer.images["kitty12"] = pygame.image.load(os.path.join("data", "kitty12.png")).convert_alpha()
+        Viewer.images["kitty12"] = pygame.transform.scale(Viewer.images["kitty12"], (250,175))
+        Viewer.images["kitty13"] = pygame.image.load(os.path.join("data", "kitty13.png")).convert_alpha()
+        Viewer.images["kitty13"] = pygame.transform.scale(Viewer.images["kitty13"], (250,175))
+        Viewer.images["kitty14"] = pygame.image.load(os.path.join("data", "kitty14.png")).convert_alpha()
+        Viewer.images["kitty14"] = pygame.transform.scale(Viewer.images["kitty14"], (250,175))
+        
         Viewer.images["kittys"] = pygame.image.load(os.path.join("data", "kittys.png")).convert_alpha()
-        Viewer.images["kittys"] = pygame.transform.scale(Viewer.images["kittys"], (150,150))
-        Viewer.images["paw"] = pygame.image.load(os.path.join("data", "paw2.png")).convert_alpha()
-        Viewer.images["paw"] = pygame.transform.scale(Viewer.images["paw"], (145,130))
+        Viewer.images["kittys"] = pygame.transform.scale(Viewer.images["kittys"], (170,150))
+        #Viewer.images["kittys"].set_colorkey((255,255,255))
+        #Viewer.images["kittys"].convert_alpha()
+        Viewer.images["paw"] = pygame.image.load(os.path.join("data", "paw1.png")).convert_alpha()
+        Viewer.images["paw"] = pygame.transform.scale(Viewer.images["paw"], (50,150))
+        
         Viewer.images["fluffballb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahnb.png")).convert_alpha()
         Viewer.images["fluffballb."] = pygame.transform.scale(Viewer.images["fluffballb."], (90,90))
         Viewer.images["fluffballgb."] = pygame.image.load(os.path.join("data", "Fluffballlöwenzahngb.png")).convert_alpha()
@@ -789,8 +822,8 @@ class Viewer(object):
         Viewer.images["cookie_menu"] = pygame.transform.scale(Viewer.images["cookie_menu"], (275, 275))
         Viewer.images["car wheel_menu"] = pygame.image.load(os.path.join("data", "car_wheel.png")).convert_alpha()
         Viewer.images["car wheel_menu"] = pygame.transform.scale(Viewer.images["car wheel_menu"], (300, 300))
-        Viewer.images["baby cat"] = pygame.image.load(os.path.join("data", "baby cat.png")).convert_alpha()
-        Viewer.images["baby cat_menu"] = pygame.transform.scale(Viewer.images["baby cat"], (300, 300))
+        Viewer.images["baby cat"] = pygame.image.load(os.path.join("data", "kitty0.png")).convert_alpha()
+        Viewer.images["baby cat_menu"] = pygame.transform.scale(Viewer.images["baby cat"], (400, 300))
         Viewer.images["baby cat"] = pygame.transform.scale(Viewer.images["baby cat"], (125, 175))
         Viewer.images["donut"] = pygame.image.load(os.path.join("data", "donut.png")).convert_alpha()
         Viewer.images["donut"] = pygame.transform.scale(Viewer.images["donut"], (100,100))
@@ -798,6 +831,8 @@ class Viewer(object):
         Viewer.images["cookie"] = pygame.transform.scale(Viewer.images["cookie"], (80,80))
         Viewer.images["car wheel"] = pygame.image.load(os.path.join("data", "car_wheel.png")).convert_alpha()
         Viewer.images["car wheel"] = pygame.transform.scale(Viewer.images["car wheel"], (100,100))
+        
+        Viewer.FluffFarbList=["fluffballb.","fluffballgb.","fluffballgn.","fluffballp.","fluffballt.","fluffballr."]
         
     def prepare_sprites(self):
         """painting on the surface and create sprites"""
@@ -833,18 +868,11 @@ class Viewer(object):
         self.kitty2 = Kitty(pos=pygame.math.Vector2(900,-300))
         self.kitty3 = Kitty(pos=pygame.math.Vector2(900,-600))
         
-        self.fluff = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//4),fluffball_color="fluffballt.")
-        self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color="fluffballp.")
-        #self.fluffs.append(self.fluff)
-        #if Game.players >= 2:
-        #    self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4))
-        #    self.fluffs.append(self.fluff2)
-        #if Game.players >= 3:
-        #    self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33))
-        #    self.fluffs.append(self.fluff3)
-        #if Game.players >= 4:
-        #    self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//1.33))
-        #    self.fluffs.append(self.fluff4)
+        
+        
+        self.fluff = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//4),
+        fluffball_color=Viewer.getFluffFarbe())
+       
             
         for x in range(Game.difficulty*6-1):
             while True:
@@ -897,7 +925,7 @@ class Viewer(object):
         """Not The mainloop"""
         running = True
         pygame.mouse.set_visible(False)
-        self.menu = True
+        self.menu = True  #self.menu_run()
         while running:
             #pygame.mixer.music.pause()
             milliseconds = self.clock.tick(self.fps) #
@@ -930,7 +958,7 @@ class Viewer(object):
                             Viewer.cursor = 0
                         elif text == "Resume":
                             return
-                        elif text == "back":
+                        elif text == "zurück":
                             Viewer.history = Viewer.history[:-1] # remove last entry
                             Viewer.cursor = 0
                             Viewer.name = Viewer.history[-1] # get last entry
@@ -945,157 +973,162 @@ class Viewer(object):
                                 self.set_screenresolution()
                                 self.prepare_sprites()
                         elif Viewer.name == "Fluffball 1":
-                            if text == "blue":
+                            if text == "blau":
                                 self.fluff.fluffball_color = "fluffballb."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                            elif text == "purple":
+                            elif text == "violett":
                                 self.fluff.fluffball_color = "fluffballp."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                            elif text == "turquoise":
+                            elif text == "türkis":
                                 self.fluff.fluffball_color = "fluffballt."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                            elif text == "red":
+                            elif text == "rot":
                                 self.fluff.fluffball_color = "fluffballr."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y)) 
-                            elif text == "yellow":
+                            elif text == "gelb":
                                 self.fluff.fluffball_color = "fluffballgb."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                            elif text == "green":
+                            elif text == "grün":
                                 self.fluff.fluffball_color = "fluffballgn."
                                 self.fluff.create_image()
                                 self.fluff.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))   
                         elif Viewer.name == "Fluffball 2":
                             if len(self.fluffgroup) >= 2:
-                                if text == "blue":
+                                if text == "blau":
                                     self.fluff2.fluffball_color = "fluffballb."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff2.pos.x), -int(self.fluff2.pos.y))
-                                elif text == "purple":
+                                elif text == "violett":
                                     self.fluff2.fluffball_color = "fluffballp."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff2.pos.x), -int(self.fluff2.pos.y))
-                                elif text == "turquoise":
+                                elif text == "türkis":
                                     self.fluff2.fluffball_color = "fluffballt."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff2.pos.x), -int(self.fluff2.pos.y))
-                                elif text == "red":
+                                elif text == "rot":
                                     self.fluff2.fluffball_color = "fluffballr."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff2.pos.x), -int(self.fluff2.pos.y))
-                                elif text == "yellow":
+                                elif text == "gelb":
                                     self.fluff2.fluffball_color = "fluffballgb."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "green":
+                                elif text == "grün":
                                     self.fluff2.fluffball_color = "fluffballgn."
                                     self.fluff2.create_image()
                                     self.fluff2.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
                         elif Viewer.name == "Fluffball 3":
                             if len(self.fluffgroup) >= 3:
-                                if text == "blue":
+                                if text == "blau":
                                     self.fluff3.fluffball_color = "fluffballb."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "purple":
+                                elif text == "violett":
                                     self.fluff3.fluffball_color = "fluffballp."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "turquoise":
+                                elif text == "türkis":
                                     self.fluff3.fluffball_color = "fluffballt."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "red":
+                                elif text == "rot":
                                     self.fluff3.fluffball_color = "fluffballr."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y)) 
-                                elif text == "yellow":
+                                elif text == "gelb":
                                     self.fluff3.fluffball_color = "fluffballgb."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "green":
+                                elif text == "grün":
                                     self.fluff3.fluffball_color = "fluffballgn."
                                     self.fluff3.create_image()
                                     self.fluff3.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
                         elif Viewer.name == "Fluffball 4":
                             if len(self.fluffgroup) >= 4:
-                                if text == "blue":
+                                if text == "blau":
                                     self.fluff4.fluffball_color = "fluffballb."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "purple":
+                                elif text == "violett":
                                     self.fluff4.fluffball_color = "fluffballp."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "turquoise":
+                                elif text == "türkis":
                                     self.fluff4.fluffball_color = "fluffballt."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "red":
+                                elif text == "rot":
                                     self.fluff4.fluffball_color = "fluffballr."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y)) 
-                                elif text == "yellow":
+                                elif text == "gelb":
                                     self.fluff4.fluffball_color = "fluffballgb."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))
-                                elif text == "green":
+                                elif text == "grün":
                                     self.fluff4.fluffball_color = "fluffballgn."
                                     self.fluff4.create_image()
                                     self.fluff4.rect.center  = (int(self.fluff.pos.x), -int(self.fluff.pos.y))  
-                        elif text == "2 Player":
+                        elif text == "2 Spieler":
                             Game.players = 2
                             if len(self.fluffgroup) > 2:
                                 self.fluff3.kill()
                             if len(self.fluffgroup) > 3:
                                 self.fluff4.kill()
                             if len(self.fluffgroup) < 2:
-                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color="fluffballp.")
+                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 2:
                                     self.fluffs.append(self.fluff2)
-                                Flytext(Viewer.width//2,Viewer.height//4,text="2 Fluffballs in the Game",color=(0,255,255),duration=5,fontsize=50)
-                        elif text == "1 Player":
+                                Flytext(Viewer.width//2,Viewer.height//4,text="2 Fluffbälle im Spiel",color=(0,255,255),duration=5,fontsize=50)
+                        elif text == "1 Spieler":
                             Game.players = 1
+                            if len(self.fluffgroup) > 3:
+                                self.fluff2.kill()
+                                self.fluff3.kill()
+                                self.fluff4.kill()
+                            if len(self.fluffgroup) > 2:
+                                self.fluff2.kill()
+                                self.fluff3.kill()
                             if len(self.fluffgroup) > 1:
                                 self.fluff2.kill()
-                            if len(self.fluffgroup) > 2:
-                                self.fluff3.kill()
-                            if len(self.fluffgroup) > 3:
-                                self.fluff4.kill()
-                            Flytext(Viewer.width//2,Viewer.height//4,text="1 Fluffball in the Game",color=(0,255,255),duration=5,fontsize=50) 
-                        elif text == "3 Player":
+                            
+                            
+                            Flytext(Viewer.width//2,Viewer.height//4,text="1 Fluffball im Spiel",color=(0,255,255),duration=5,fontsize=50) 
+                        elif text == "3 Spieler":
                             Game.players = 3
                             if len(self.fluffgroup) == 1:
-                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color="fluffballt.")
+                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 2:
                                     self.fluffs.append(self.fluff2)
                             if len(self.fluffgroup) == 2:
-                                self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33),fluffball_color="fluffballp.")
+                                self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 3:
                                     self.fluffs.append(self.fluff3)
                             if len(self.fluffgroup) > 3:
                                 self.fluff4.kill()
-                            Flytext(Viewer.width//2,Viewer.height//4,text="3 Fluffball in the Game",color=(0,255,255),duration=5,fontsize=50)
-                        elif text == "4 Player":    
+                            Flytext(Viewer.width//2,Viewer.height//4,text="3 Fluffbälle im Spiel",color=(0,255,255),duration=5,fontsize=50)
+                        elif text == "4 Spieler":    
                             Game.players = 4
                             if len(self.fluffgroup) == 1:
-                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33),fluffball_color="fluffballt.")
+                                self.fluff2 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//4,-Viewer.height//1.33),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 2:
                                     self.fluffs.append(self.fluff2)
                             if len(self.fluffgroup) == 2:
-                                self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color="fluffballp.")
+                                self.fluff3 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//4),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 3:
                                     self.fluffs.append(self.fluff3)
                             if len(self.fluffgroup) == 3:
-                                self.fluff4 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//1.33),fluffball_color="fluffballr.")
+                                self.fluff4 = Fluffball(bounce_on_edge=True, pos=pygame.math.Vector2(Viewer.width//1.33,-Viewer.height//1.33),fluffball_color=Viewer.getFluffFarbe())
                                 if len(self.fluffs) < 4:
                                     self.fluffs.append(self.fluff4)
-                            Flytext(Viewer.width//2,Viewer.height//4,text="4 Fluffball in the Game",color=(0,255,255),duration=5,fontsize=50)
-                        elif Viewer.name == "Difficulty":
+                            Flytext(Viewer.width//2,Viewer.height//4,text="4 Fluffbälle im Spiel",color=(0,255,255),duration=5,fontsize=50)
+                        elif Viewer.name == "Schwierigkeit":
                             if text == "Easy":
                                 Game.difficulty = 1
                                 self.collisions = 0
@@ -1110,11 +1143,11 @@ class Viewer(object):
                                 self.collisions = 0
                             self.prepare_sprites()
                         elif Viewer.name == "Fullscreen":
-                            if text == "True":
+                            if text == "Fullscreen Ein":
                                 #Viewer.menucommandsound.play()
                                 Viewer.fullscreen = True
                                 self.set_screenresolution()
-                            elif text == "False":
+                            elif text == "Fullscreen Aus":
                                 #Viewer.menucommandsound.play()
                                 Viewer.fullscreen = False
                                 self.set_screenresolution()
@@ -1130,9 +1163,10 @@ class Viewer(object):
             self.allgroup.draw(self.screen)
             
             
-            pygame.draw.rect(self.screen,(170,170,170),(200,90,350,350))
-            pygame.draw.rect(self.screen,(200,200,200),(600,90,350,350))
-            pygame.draw.rect(self.screen,(230,230,230),(1000,90,350,350))
+            
+            pygame.draw.rect(self.screen,(170,170,170),(200,90,350,370))
+            pygame.draw.rect(self.screen,(200,200,200),(600,90,350,370))
+            pygame.draw.rect(self.screen,(230,230,230),(1000,90,350,370))
             
             self.flytextgroup.draw(self.screen)
 
@@ -1174,11 +1208,8 @@ class Viewer(object):
         self.snipertarget = None
         gameOver = False
         exittime = 0
-        #Flytext(Viewer.width/2,Viewer.height/4,"Eat all Donuts and Cookies", (0,0,255), duration=10, fontsize=100)
-        #Flytext(Viewer.width/2,Viewer.height/2,"and stay under 50 collisions", (0,0,255), duration=10, fontsize=100)
-        #Flytext(Viewer.width/2,Viewer.height/1.33,"with the car wheels", (0,0,255), duration=10, fontsize=100)
-        
-        
+        self.menu_run()
+       
         crazytime = 0
         crazytime_cooldown = 0
         while running:
@@ -1210,12 +1241,6 @@ class Viewer(object):
                         running = False
                     #if event.key == pygame.K_1:
                      
-                #   if event.key == pygame.K_l:
-                #       self.fluff.move = pygame.math.Vector2(0,0)
-                #       self.fluff.pos = pygame.math.Vector2(Viewer.width/1.33,-Viewer.height/2)
-                #   elif event.key == pygame.K_k:
-                #       self.fluff2.move = pygame.math.Vector2(0,0)
-                #       self.fluff2.pos = pygame.math.Vector2(Viewer.width/4,-Viewer.height/2)
                     elif event.key == pygame.K_m:
                         self.menu_run()
                         
@@ -1272,66 +1297,25 @@ class Viewer(object):
                     self.fluff3.move += pygame.math.Vector2(0,10)
                 if pressed_keys[pygame.K_k]:
                     self.fluff3.move += pygame.math.Vector2(0,-10)
-            # ------ mouse handler ------
-            #left,middle,right = pygame.mouse.get_pressed()
-            #if oldleft and not left:
-            #    self.launchRocket(pygame.mouse.get_pos())
-            #if right:
-            #    self.launchRocket(pygame.mouse.get_pos())
-            #oldleft, oldmiddle, oldright = left, middle, right
-
-            # ------ joystick handler -------
-        #    print(self.fluffs)
-        #    print(len(self.joysticks))
-            for number, j in enumerate(self.joysticks):
-                if number == 0 :
-                    x = j.get_axis(0)
-                    y = j.get_axis(1)
-                    self.fluffs[0].move.x += x * 10 # *2 
-                    self.fluffs[0].move.y -= y * 10 # *2 
-                if len(self.fluffs) > 1 and number == 1:
-                    x = j.get_axis(0)
-                    y = j.get_axis(1)
-                    self.fluffs[1].move.x += x * 10 # *2 
-                    self.fluffs[1].move.y -= y * 10 # *2
-                if len(self.fluffs) > 2 and number == 2:
-                    x = j.get_axis(0)
-                    y = j.get_axis(1)
-                    self.fluffs[2].move.x += x * 10 # *2 
-                    self.fluffs[2].move.y -= y * 10 # *2
-                if len(self.fluffs) > 3 and number == 3:
-                    x = j.get_axis(0)
-                    y = j.get_axis(1)
-                    self.fluffs[3].move.x += x * 10 # *2 
-                    self.fluffs[3].move.y -= y * 10 # *2
-            #       buttons = j.get_numbuttons()
-            #       for b in range(buttons):
-            #           pushed = j.get_button( b )
-                       #if b == 0 and pushed:
-                       #        self.launchRocket((mouses[number].x, mouses[number].y))
-                       #elif b == 1 and pushed:
-                       #    if not self.mouse4.pushed: 
-                       #        self.launchRocket((mouses[number].x, mouses[number].y))
-                       #        mouses[number] = True
-                       #elif b == 1 and not pushed:
-                       #    mouses[number] = False
-            
-            
-            #pos1 = pygame.math.Vector2(pygame.mouse.get_pos())
-            #pos2 = self.mouse2.rec#t.center
-            #pos3 = self.mouse3.rect.center
+                    
+                    
+            if len(self.fluffgroup) == 4:
+                if pressed_keys[pygame.K_n]:
+                    self.fluff4.move += pygame.math.Vector2(10,0)
+                if pressed_keys[pygame.K_v]:
+                    self.fluff4.move += pygame.math.Vector2(-10,0)
+                if pressed_keys[pygame.K_g]:
+                    self.fluff4.move += pygame.math.Vector2(0,10)
+                if pressed_keys[pygame.K_b]:
+                    self.fluff4.move += pygame.math.Vector2(0,-10)       
+           
             
             # write text below sprites
             write(self.screen, "FPS: {:8.3}".format(
                 self.clock.get_fps() ), x=10, y=10)
-            #write(self.screen, "Collisions:{}".format(self.collisions), x=Viewer.width-200, y=10)
+            write(self.screen, "Collisions:{}".format(self.collisions), x=Viewer.width-200, y=10)
             self.allgroup.update(seconds)
-            #self.pawgroup.update(seconds)
             
-            #if len(self.foodgroup) == 0:
-            #    Flytext(Viewer.width/2,Viewer.width/2,"Alles gemumpft... Päuschen!", (0,0,255), duration=10, fontsize=100)
-            #if self.collisions > 100:
-            #    break
             
             # -----------collision detection between fluffballs and food -----
             for f in self.fluffgroup:
@@ -1361,20 +1345,17 @@ class Viewer(object):
                             crazytime = self.playtime + 0.1
                             crazytime_cooldown = self.playtime + 0.75
                             Flytext(f.pos.x,-f.pos.y,text="Uargh, ein Autoreifen!",color=(1,1,1),duration=5,fontsize=40)
-                        #if random.random() < 0.1:
-                        #if crazytime_cooldown <= self.playtime:
-                        #    crazytime = self.playtime + 0.1
-                        #    crazytime_cooldown = self.playtime + 1
+                       
                         f.reifendamage +=100
                         #Fluffball makes a little jump if bouncing against a car wheel
                         f.move = f.move*-0.8
                         j = f.move.normalize()*25
                         f.pos += j
                         if len(self.foodgroup):
-                        #    self.collisions += 1
-                        #if self.collisions == 50:
-                        #   Flytext(Viewer.width/2,Viewer.height/2,"Game over", (0,0,0), duration=10, fontsize=350)
-                        #    gameOver = True
+                            self.collisions += 1
+                        if self.collisions == 100:
+                            Flytext(Viewer.width/2,Viewer.height/2,"Game over", (0,0,0), duration=10, fontsize=350)
+                            gameOver = True
                             exittime = self.playtime + 3
                         #(self, pos, maxspeed=150, minspeed=20, color=(255,255,0),maxduration=2.5,gravity=3.7,sparksmin=5,sparksmax=20):
                         dist = f.pos-z.pos
@@ -1389,13 +1370,7 @@ class Viewer(object):
                 for otherf in crashgroup:
                     if f.number > otherf.number:
                         elastic_collision(f, otherf)   
-            #-----------collision detection between kitty and other stuff------
-          #  for b in self.kittygroup:
-          #      crashgroup = pygame.sprite.spritecollide(b, self.fluffgroup, False, pygame.sprite.collide_mask)
-          #      for c in crashgroup:
-          #          m = pygame.math.Vector2(random.randint(150,350),0)
-          #          m = m.rotate(random.randint(0,360))
-          #          c.move = m
+       
             
             # ----- all paws in idle position ----- 
             for k in self.kittygroup:
@@ -1414,27 +1389,28 @@ class Viewer(object):
 
                 for f in self.fluffgroup:
                     # --------- kitty plays with ball -------
-                    diff= f.pos - k.pos
+                    
+                    diff= f.pos - (k.pos - pygame.math.Vector2(0,0))
                     diff.y *= -1
-                    if diff.length()<150:
+                    #print ("Test " + str(diff.length()))
+                    if diff.length()<100:
+
                         a=diff.angle_to(pygame.math.Vector2(1,0))
                         # alle pfoten von kitty1 suchen
                         for p in self.pawgroup:
                             if p.bossnumber == k.number:
+                                #print("Pfote gefunden")
                                 p.play(angle=a)
-                                #self.fluff.move += diff * 0.5
-                                #vollbremsung
-                                f.move = pygame.math.Vector2(0,0)
-                                rv = pygame.math.Vector2(random.random()*150+150,0)
-                                rv.rotate(random.randint(0,360))
-                                f.move+=rv 
+                        
+                        f.move = pygame.math.Vector2(0,0)
+                        rv = pygame.math.Vector2(random.random()*150+150,0)
+                        rv=rv.rotate(random.randint(0,360))
+                        f.move+=rv
+                        
                     
                             # ----------- clear, draw , update, flip -----------------
             self.allgroup.draw(self.screen)
-            #for p in self.pawgroup:
-            #    if not p.boss.sleep:
-            #        p.draw(self.screen)
-                    
+           
                         
             # -------- next frame -------------
             pygame.display.flip()
@@ -1444,3 +1420,15 @@ class Viewer(object):
 
 if __name__ == '__main__':
     Viewer(1430,800).run() # try Viewer(800,600).run()
+#© 2019 GitHub, Inc.
+#Terms
+#Privacy
+#Security
+#Status
+#Help
+#Contact GitHub
+#Pricing
+#API
+#Training
+#Blog
+#About
